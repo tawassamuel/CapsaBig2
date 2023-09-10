@@ -30,8 +30,11 @@ public class AudioManager : MonoBehaviour
         AudioClipData getClipData = allData.Where(x => x.GetName() == name).FirstOrDefault();
         if (getClipData != null)
         {
-            if (currentMusic == getClipData)
-                return;
+            if (currentMusic != null)
+            {
+                if (currentMusic.GetName() == getClipData.GetName())
+                    return;
+            }
 
             if (sourceMusic.isPlaying)
                 sourceMusic.Stop();
