@@ -9,8 +9,7 @@ public class CapsaDeskController : MonoBehaviour
     public enum PhaseDesk
     {
         Start = 0,
-        Battle = 1,
-        Finish = 2
+        Finish = 1
     }
 
     private const string StrSpade = "Spade";
@@ -28,8 +27,30 @@ public class CapsaDeskController : MonoBehaviour
     }
 
     [Header("Game Rules"), SerializeField] private CapsaRuleData rulesData = null;
+    public CapsaRuleData RulesData
+    {
+        get
+        {
+            return rulesData;
+        }
+    }
     [SerializeField] private TurnBaseManager turnManager = null;
+    public TurnBaseManager TurnManager
+    {
+        get
+        {
+            return turnManager;
+        }
+    }
+
     [SerializeField] private CapsaBattleManager battleManager = null;
+    public CapsaBattleManager BattleManager
+    {
+        get
+        {
+            return battleManager;
+        }
+    }
     [SerializeField] private AICapsaController aiController = null;
     [SerializeField] private GameObject prefabCard = null;
     public GameObject Prefab
@@ -48,6 +69,8 @@ public class CapsaDeskController : MonoBehaviour
     private List<CardView> selectedPlayerCards = new List<CardView>();
     private List<CardView> spawnedCardCenter = new List<CardView>();
     private List<CardView> allRegisteredCards = new List<CardView>();
+
+    private PlayerEntity Winner { get; set; }
 
 #if UNITY_EDITOR
     [Header("Dev Tool (Editor Only)"), SerializeField] private GameObject panelDev = null;
@@ -69,12 +92,57 @@ public class CapsaDeskController : MonoBehaviour
 
     public event System.Action<List<CardView>, CapsaRuleData.ComboOutput> OnAllSelectedCardByPlayer;
 
-    private void Awake()
+    #region Player-Listener-Controller
+    private IEnumerator DelayAIAction(PlayerEntity currentAI)
     {
-        singleton = this;
+        yield return new WaitForSeconds(aiController.DelayMove);
+
+        AICapsaController.GameState currentGameState = new AICapsaController.GameState();
+        currentGameState.avaiableCards = currentAI.GetAvailableCards();
+        currentGameState.currentPlayer = currentAI;
+        CapsaRuleData.ComboOutput takeCombo = aiController.GenerateMove(currentGameState, this);
+
+        yield return new WaitForEndOfFrame();
+
+        if (takeCombo == null)
+        {
+            turnManager.GoNextTurn(players);
+            yield break;
+        }
+
+        List<CardData> comboCards = takeCombo.availableCards;
+        if (comboCards == null)
+        {
+            yield return new WaitForSeconds(aiController.DelayMove);
+
+            turnManager.GoNextTurn(players);
+            yield break;
+        }
+
+        currentAI.PullSomeCard(comboCards);
+        battleManager.PutToTable(currentAI, comboCards, this.Prefab);
+
+        yield return new WaitForSeconds(aiController.DelayMove);
+
+        turnManager.GoNextTurn(players);
     }
 
-    #region Player-Listener-Controller
+    public void OnSwitchedPlayer(PlayerEntity currentPlayer)
+    {
+        if (Winner != null)
+            return;
+
+        if (battleManager.GetLastSender() == currentPlayer)
+        {
+            Debug.Log("Winner battle is " + currentPlayer.GetName());
+            battleManager.ClearAll();
+        }
+
+        if (!currentPlayer.IsMine())
+        {
+            StartCoroutine(DelayAIAction(currentPlayer));
+        }
+    }
     public void ResetSelectedCardByPlayer()
     {
         for(int i = 0; i < selectedPlayerCards.Count; i++)
@@ -106,7 +174,7 @@ public class CapsaDeskController : MonoBehaviour
         }
 
         myEntity.PullSomeCard(cardDatums);
-        battleManager.PutToTable(cardDatums, this.Prefab);
+        battleManager.PutToTable(myEntity, cardDatums, this.Prefab);
 
         ResetSelectedCardByPlayer();
         turnManager.GoNextTurn(players);
@@ -190,6 +258,12 @@ public class CapsaDeskController : MonoBehaviour
             {
                 Destroy(cardView.gameObject);
             }
+        }
+
+        if (entity.GetAvailableCards().Count <= 0)
+        {
+            Winner = entity;
+            InvokePhase(PhaseDesk.Finish);
         }
     }
 
@@ -349,6 +423,10 @@ public class CapsaDeskController : MonoBehaviour
     #endregion
 
     #region Gameplay
+    public void PassAction()
+    {
+        turnManager.GoNextTurn(players);
+    }
     public void RenderCardBattleCenter(List<CardData> putCard)
     {
         currentCenterCards.AddRange(putCard);
@@ -366,6 +444,10 @@ public class CapsaDeskController : MonoBehaviour
         PlayerEntity myEntity = players.Where(x => x.IsMine() == true).FirstOrDefault();
         return turnManager.WhoCurrentTurn() == myEntity;
     }
+    public void PlayAgain()
+    {
+        InvokePhase(PhaseDesk.Start);
+    }
     void InvokePhase(PhaseDesk phase)
     {
         switch (phase)
@@ -376,21 +458,29 @@ public class CapsaDeskController : MonoBehaviour
                 ShuffleDeck();
                 InitializeAllPlayers();
                 ShareAllCardsToPlayers();
-
+                Winner = null;
+                battleManager.ClearAll();
                 turnManager.Initialize();
                 turnManager.SwitchTurn(turnManager.WhoGotFirstTurn(players));
-                break;
-            case PhaseDesk.Battle:
+                battleManager.SetWinnerAnnounce("", false);
                 break;
             case PhaseDesk.Finish:
+                if (Winner.IsMine())
+                {
+                    battleManager.SetWinnerAnnounce("YOU WIN", true);
+                } else
+                {
+                    battleManager.SetWinnerAnnounce("YOU LOSE", true);
+                }
                 break;
         }
     }
     #endregion
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
     {
+        singleton = this;
+
         if (turnManager == null)
             turnManager = GetComponent<TurnBaseManager>();
 
@@ -399,11 +489,20 @@ public class CapsaDeskController : MonoBehaviour
 
         if (aiController == null)
             aiController = GetComponentInChildren<AICapsaController>();
+    }
 
+    // Start is called before the first frame update
+    void Start()
+    {
         availableDeck.AddRange(Resources.LoadAll<CardData>(StrSpade).ToList());
         availableDeck.AddRange(Resources.LoadAll<CardData>(StrHeart).ToList());
         availableDeck.AddRange(Resources.LoadAll<CardData>(StrClub).ToList());
         availableDeck.AddRange(Resources.LoadAll<CardData>(StrDiamond).ToList());
+
+        if (turnManager != null)
+        {
+            turnManager.OnCatchPlayerToPlay += OnSwitchedPlayer;
+        }
 
         InvokePhase(PhaseDesk.Start);
     }

@@ -1,11 +1,27 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class CapsaBattleManager : MonoBehaviour
 {
     [SerializeField] private RectTransform container = null;
     [SerializeField] private List<CardView> currentTable = null;
+    [SerializeField] private GameObject announceWinnerPanel = null;
+    [SerializeField] private TMP_Text textAnnounceWinner = null;
+    public List<CardView> CurrentTable
+    {
+        get
+        {
+            return currentTable;
+        }
+    }
+
+    private PlayerEntity lastSender = null;
+    public PlayerEntity GetLastSender()
+    {
+        return lastSender;
+    }
 
     public bool IsTableContainCards()
     {
@@ -13,6 +29,12 @@ public class CapsaBattleManager : MonoBehaviour
             return false;
 
         return currentTable.Count > 0;
+    }
+
+    public void SetWinnerAnnounce(string textInput, bool active)
+    {
+        announceWinnerPanel.SetActive(active);
+        textAnnounceWinner.text = textInput;
     }
 
     public CapsaRuleData.ComboOutput HasKindCombo(int numOfTurn, CapsaRuleData ruleImplement)
@@ -27,10 +49,24 @@ public class CapsaBattleManager : MonoBehaviour
         return ruleImplement.GetAvailableCombo(numOfTurn, cards);
     }
 
-    public void PutToTable(List<CardData> input, GameObject prefab)
+    public void ClearAll()
+    {
+        foreach (CardView card in currentTable)
+        {
+            if (card == null)
+                continue;
+
+            Destroy(card.gameObject);
+        }
+        currentTable.Clear();
+    }
+
+    public void PutToTable(PlayerEntity senderEntity, List<CardData> input, GameObject prefab)
     {
         if (currentTable == null)
             currentTable = new List<CardView>();
+
+        lastSender = senderEntity;
 
         foreach (CardView card in currentTable)
         {
