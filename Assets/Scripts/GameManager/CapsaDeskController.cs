@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Lean.Pool;
 
 public class CapsaDeskController : MonoBehaviour
 {
@@ -55,6 +56,14 @@ public class CapsaDeskController : MonoBehaviour
         }
     }
     [SerializeField] private AICapsaController aiController = null;
+    [SerializeField] private LeanGameObjectPool poolCard = null;
+    public LeanGameObjectPool ObjectPoolCard
+    {
+        get
+        {
+            return poolCard;
+        }
+    }
     [SerializeField] private GameObject prefabCard = null;
     public GameObject Prefab
     {
@@ -130,7 +139,6 @@ public class CapsaDeskController : MonoBehaviour
 
         turnManager.GoNextTurn(players);
     }
-
     public void OnSwitchedPlayer(PlayerEntity currentPlayer)
     {
         if (Winner != null)
@@ -160,7 +168,6 @@ public class CapsaDeskController : MonoBehaviour
         selectedPlayerCards.Clear();
         OnAllSelectedCardByPlayer?.Invoke(selectedPlayerCards, rulesData.GetAvailableCombo(turnManager.NumOfTurn(), ConvertToCardDataByView(selectedPlayerCards)));
     }
-
     public void SubmitSelectedCardByPlayer(CapsaRuleData.ComboOutput comboConfirm)
     {
         PlayerEntity myEntity = players.Where(x => x.IsMine() == true).FirstOrDefault();
@@ -183,7 +190,6 @@ public class CapsaDeskController : MonoBehaviour
         ResetSelectedCardByPlayer();
         turnManager.GoNextTurn(players);
     }
-
     public void OnToggleSelectedCardByPlayer(CardView selectedCard)
     {
         Debug.LogFormat("You Select {0} card", selectedCard.GetData().GetCardName());
@@ -235,12 +241,11 @@ public class CapsaDeskController : MonoBehaviour
                 OnAllSelectedCardByPlayer?.Invoke(selectedPlayerCards, availableCombo);
         }
     }
-
     private void AddedCardOnPlayer(PlayerEntity entity, CardData card, RectTransform ownContainer)
     {
         Debug.Log("Update cards for " + entity.GetName());
 
-        GameObject spawned = Instantiate(prefabCard, ownContainer);
+        GameObject spawned = poolCard.Spawn(ownContainer);
         CardView cardView = spawned.GetComponent<CardView>();
         if (entity.IsMine())
             cardView.InitializeView(card, OnToggleSelectedCardByPlayer);
@@ -249,7 +254,6 @@ public class CapsaDeskController : MonoBehaviour
         cardView.SetShowCard(entity.IsMine());
         allRegisteredCards.Add(cardView);
     }
-
     private void RemovedCardsFromPlayer(PlayerEntity entity, List<CardData> cards, RectTransform ownContainer)
     {
         foreach(CardData card in cards)
@@ -260,7 +264,7 @@ public class CapsaDeskController : MonoBehaviour
             CardView cardView = allRegisteredCards.Where(x => x.GetData() == card).FirstOrDefault();
             if (cardView != null)
             {
-                Destroy(cardView.gameObject);
+                poolCard.Despawn(cardView.gameObject);
             }
         }
 
@@ -296,7 +300,6 @@ public class CapsaDeskController : MonoBehaviour
             }
         }
     }
-
     private void ShuffleDeck()
     {
         for (int i = availableDeck.Count - 1; i > 0; i--)
@@ -308,7 +311,6 @@ public class CapsaDeskController : MonoBehaviour
             availableDeck[i] = cardDeck;
         }
     }
-
     private void InitializeAllPlayers()
     {
         for (int i = 0; i < players.Count; i++)
@@ -319,7 +321,6 @@ public class CapsaDeskController : MonoBehaviour
             players[i].Initialize(AddedCardOnPlayer, null, RemovedCardsFromPlayer);
         }
     }
-
     private void ClearAllPlayers()
     {
         for (int i = 0; i < players.Count; i++)
@@ -330,7 +331,6 @@ public class CapsaDeskController : MonoBehaviour
             players[i].Clear(AddedCardOnPlayer, null, RemovedCardsFromPlayer);
         }
     }
-
     private void ShareAllCardsToPlayers()
     {
         int indexPlayer = 0;
@@ -383,7 +383,7 @@ public class CapsaDeskController : MonoBehaviour
 
             foreach (CardView cardView in spawnedCardCenter)
             {
-                Destroy(cardView.gameObject);
+                poolCard.Despawn(cardView.gameObject);
             }
             currentCenterCards.Clear();
             spawnedCardCenter.Clear();
@@ -415,7 +415,6 @@ public class CapsaDeskController : MonoBehaviour
         });
 #endif
     }
-    
     private void OnSelectedAvatarByPlayer(AvatarData dataAvatar)
     {
         PlayerEntity getMine = players.Where(x => x.IsMine() == true).FirstOrDefault();
@@ -473,7 +472,7 @@ public class CapsaDeskController : MonoBehaviour
             allRegisteredCards[i].SetSelected(false);
             allRegisteredCards[i].SetShowCard(false);
 
-            Destroy(allRegisteredCards[i].gameObject);
+            poolCard.Despawn(allRegisteredCards[i].gameObject);
         }
 
         allRegisteredCards.Clear();
@@ -490,7 +489,7 @@ public class CapsaDeskController : MonoBehaviour
         currentCenterCards.AddRange(putCard);
         for (int i = 0; i < putCard.Count; i++)
         {
-            GameObject spawned = Instantiate(prefabCard, centerBattle);
+            GameObject spawned = poolCard.Spawn(centerBattle);
             CardView cardView = spawned.GetComponent<CardView>();
             cardView.InitializeView(putCard[i]);
             cardView.SetShowCard(true);

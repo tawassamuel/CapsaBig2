@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
-public class CardView : MonoBehaviour
+using Lean.Pool;
+public class CardView : MonoBehaviour, IPoolable
 {
     [SerializeField] private bool showAtStar = false;
 
@@ -44,5 +44,20 @@ public class CardView : MonoBehaviour
     public CardData GetData()
     {
         return cardData;
+    }
+
+    public void OnSpawn(){}
+
+    public void OnDespawn()
+    {
+        cardData = null;
+        imageRenderer.texture = null;
+        imageRenderer.gameObject.SetActive(false);
+        gameObject.name = "Card";
+
+        selected = false;
+        transform.localScale = Vector3.one * 1f;
+
+        btnOnClick.onClick.RemoveAllListeners();
     }
 }

@@ -65,7 +65,8 @@ public class CapsaBattleManager : MonoBehaviour
             if (card == null)
                 continue;
 
-            Destroy(card.gameObject);
+            //Destroy(card.gameObject);
+            CapsaDeskController.Singleton.ObjectPoolCard.Despawn(card.gameObject);
         }
         currentTable.Clear();
     }
@@ -85,13 +86,14 @@ public class CapsaBattleManager : MonoBehaviour
             if (card == null)
                 continue;
 
-            Destroy(card.gameObject);
+            CapsaDeskController.Singleton.ObjectPoolCard.Despawn(card.gameObject);
+            //Destroy(card.gameObject);
         }
         currentTable.Clear();
 
         for (int i = 0; i < input.Count; i++)
         {
-            GameObject spawned = Instantiate(prefab, container);
+            GameObject spawned = CapsaDeskController.Singleton.ObjectPoolCard.Spawn(container);
             CardView cardView = spawned.GetComponent<CardView>();
             cardView.InitializeView(input[i]);
             cardView.SetShowCard(true);
