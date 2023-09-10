@@ -9,7 +9,8 @@ public class CapsaDeskController : MonoBehaviour
     public enum PhaseDesk
     {
         Start = 0,
-        Finish = 1
+        Finish = 1,
+        Close = 2
     }
 
     private const string StrSpade = "Spade";
@@ -25,6 +26,8 @@ public class CapsaDeskController : MonoBehaviour
             return singleton;
         }
     }
+
+    [SerializeField] private bool autoStart = false;
 
     [Header("Game Rules"), SerializeField] private CapsaRuleData rulesData = null;
     public CapsaRuleData RulesData
@@ -444,7 +447,7 @@ public class CapsaDeskController : MonoBehaviour
         PlayerEntity myEntity = players.Where(x => x.IsMine() == true).FirstOrDefault();
         return turnManager.WhoCurrentTurn() == myEntity;
     }
-    public void PlayAgain()
+    public void StartGame()
     {
         InvokePhase(PhaseDesk.Start);
     }
@@ -472,6 +475,13 @@ public class CapsaDeskController : MonoBehaviour
                 {
                     battleManager.SetWinnerAnnounce("YOU LOSE", true);
                 }
+                break;
+            case PhaseDesk.Close:
+                ClearAllPlayers();
+                battleManager.ClearAll();
+                turnManager.Initialize();
+                Winner = null;
+                battleManager.SetWinnerAnnounce("", false);
                 break;
         }
     }
@@ -504,7 +514,10 @@ public class CapsaDeskController : MonoBehaviour
             turnManager.OnCatchPlayerToPlay += OnSwitchedPlayer;
         }
 
-        InvokePhase(PhaseDesk.Start);
+        if (autoStart)
+            InvokePhase(PhaseDesk.Start);
+        else
+            InvokePhase(PhaseDesk.Close);
     }
 
 #if UNITY_EDITOR
