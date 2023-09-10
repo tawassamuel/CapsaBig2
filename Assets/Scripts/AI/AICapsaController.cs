@@ -59,7 +59,8 @@ public class AICapsaController : MonoBehaviour
 
             foreach (CapsaRuleData.ComboOutput combo in allLegalCombo)
             {
-                if (combo.name != tableCombo.name || combo.basedValue <= tableCombo.basedValue)
+                bool canBeat = deskController.RulesData.CanBeatCardOnTable(combo, tableCombo);
+                if (!canBeat)
                     continue;
                 else
                     legalCombo.Add(combo);

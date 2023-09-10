@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2bd466bbd1bcdde478334f541741d1b7, type: 3}
+  m_Name: Cr1
+  m_EditorClassIdentifier: 
+  emotes:
+  - name: Cr1 Idle
+    state: 0
+    sprite: {fileID: 21300000, guid: 78a6718be91da5c4da98f2ec29224b26, type: 3}
+  - name: Cr1 Sad
+    state: -1
+    sprite: {fileID: 21300000, guid: ebfeddf755f52db479e6e5c18ecae7c0, type: 3}
+  - name: Cr1 Happy
+    state: 1
+    sprite: {fileID: 21300000, guid: b43a95be97d7bb3468f2622d6e977ff6, type: 3}

@@ -25,6 +25,17 @@ public class CapsaRuleData : ScriptableObject
     [SerializeField] private List<CardData.Rank> rankOrders = new List<CardData.Rank>();
     [SerializeField] private List<CardData.TypeSymbol> rankSuits = new List<CardData.TypeSymbol>();
 
+    public bool ReshufflingByCards(List<CardData> input)
+    {
+        List<CardData> analyze = new List<CardData>(input);
+        int numOfAll = analyze.Where(data => data.GetRank() == CardData.Rank.Two).Count();
+
+        if (numOfAll >= 4)
+            return true;
+
+        return false;
+    }
+
     public int GetWeightByCardData(CardData input)
     {
         int wRank = GetRankByRule(input);
@@ -238,6 +249,15 @@ public class CapsaRuleData : ScriptableObject
         bool fetchAnalyzer = analyze.Zip(analyze.Skip(4), (x, y) => (GetRankByRule(x) + 4) == GetRankByRule(y)).Any(x => x);
         if (fetchAnalyzer)
         {
+            bool checkTwo = analyze.Where(x => x.GetRank() == CardData.Rank.Two).FirstOrDefault() != null;
+            bool checkAce = analyze.Where(x => x.GetRank() == CardData.Rank.Ace).FirstOrDefault() != null;
+            bool checkKing = analyze.Where(x => x.GetRank() == CardData.Rank.King).FirstOrDefault() != null;
+            bool checkQueen = analyze.Where(x => x.GetRank() == CardData.Rank.Queen).FirstOrDefault() != null;
+            bool checkJack = analyze.Where(x => x.GetRank() == CardData.Rank.Jack).FirstOrDefault() != null;
+
+            if (checkTwo && checkAce && checkKing && checkQueen && checkJack)
+                return null;
+
             ComboOutput outputCombo = new ComboOutput();
             outputCombo.basedNum = 5;
             outputCombo.basedValue = analyze.Sum(x => this.GetWeightByCardData(x));
@@ -418,6 +438,15 @@ public class CapsaRuleData : ScriptableObject
 
             if (straight.Count >= 5)
             {
+                bool checkTwo = straight.Where(x => x.GetRank() == CardData.Rank.Two).FirstOrDefault() != null;
+                bool checkAce = straight.Where(x => x.GetRank() == CardData.Rank.Ace).FirstOrDefault() != null;
+                bool checkKing = straight.Where(x => x.GetRank() == CardData.Rank.King).FirstOrDefault() != null;
+                bool checkQueen = straight.Where(x => x.GetRank() == CardData.Rank.Queen).FirstOrDefault() != null;
+                bool checkJack = straight.Where(x => x.GetRank() == CardData.Rank.Jack).FirstOrDefault() != null;
+
+                if (checkTwo && checkAce && checkKing && checkQueen && checkJack)
+                    continue;
+
                 ComboOutput tryInsert = new ComboOutput();
                 tryInsert.availableCards = straight;
                 tryInsert.basedValue = straight.Sum(card => GetWeightByCardData(card));
@@ -504,6 +533,8 @@ public class CapsaRuleData : ScriptableObject
                     {
                         tryInsert.availableCards.Add(cardB);
                         tryInsert.basedValue += GetWeightByCardData(cardB);
+                        if (tryInsert.availableCards.Count == 5)
+                            break;
                     }
                 }
 
@@ -525,6 +556,7 @@ public class CapsaRuleData : ScriptableObject
         foreach (ComboOutput straight in allStraight)
         {
             result.AddRange(AllFlush(straight.availableCards));
+
         }
 
         return result;
@@ -564,5 +596,25 @@ public class CapsaRuleData : ScriptableObject
         }
 
         return result;
+    }
+
+    public bool CanBeatCardOnTable(ComboOutput input, ComboOutput compareTable)
+    {
+        if (input.name != compareTable.name || input.basedValue <= compareTable.basedValue)
+        {
+            if (input.basedNum == 5)
+            {
+                if (input.name == "Full House" && compareTable.name.Contains("Straight"))
+                    return true;
+                else if (compareTable.name == "Straight Flush" || compareTable.name == "Four of a kind & one card")
+                    return true;
+                else
+                    return false;
+            }
+            else
+                return false;
+        }
+        else
+            return true;
     }
 }

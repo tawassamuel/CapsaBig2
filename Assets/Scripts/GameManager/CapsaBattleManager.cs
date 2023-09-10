@@ -1,10 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class CapsaBattleManager : MonoBehaviour
 {
+    [SerializeField] private Image imgCurrentDealer = null;
+    [SerializeField] private TMP_Text textCurrentCombo = null;
     [SerializeField] private RectTransform container = null;
     [SerializeField] private List<CardView> currentTable = null;
     [SerializeField] private GameObject announceWinnerPanel = null;
@@ -49,37 +52,48 @@ public class CapsaBattleManager : MonoBehaviour
         return ruleImplement.GetAvailableCombo(numOfTurn, cards);
     }
 
-    public void ClearAll()
+    public void ClearAll(string winnerDealer = "")
     {
+        if (!string.IsNullOrEmpty(winnerDealer))
+            textCurrentCombo.text = winnerDealer + " won the battle. Put some cards";
+
+        textCurrentCombo.text = "";
+        imgCurrentDealer.gameObject.SetActive(false);
+
         foreach (CardView card in currentTable)
         {
             if (card == null)
                 continue;
 
-            Destroy(card.gameObject);
+            //Destroy(card.gameObject);
+            CapsaDeskController.Singleton.ObjectPoolCard.Despawn(card.gameObject);
         }
         currentTable.Clear();
     }
 
-    public void PutToTable(PlayerEntity senderEntity, List<CardData> input, GameObject prefab)
+    public void PutToTable(PlayerEntity senderEntity, List<CardData> input, string nameCombo)
     {
         if (currentTable == null)
             currentTable = new List<CardView>();
 
         lastSender = senderEntity;
+        textCurrentCombo.text = nameCombo;
+        imgCurrentDealer.gameObject.SetActive(true);
+        imgCurrentDealer.sprite = senderEntity.GetProfile();
 
         foreach (CardView card in currentTable)
         {
             if (card == null)
                 continue;
 
-            Destroy(card.gameObject);
+            CapsaDeskController.Singleton.ObjectPoolCard.Despawn(card.gameObject);
+            //Destroy(card.gameObject);
         }
         currentTable.Clear();
 
         for (int i = 0; i < input.Count; i++)
         {
-            GameObject spawned = Instantiate(prefab, container);
+            GameObject spawned = CapsaDeskController.Singleton.ObjectPoolCard.Spawn(container);
             CardView cardView = spawned.GetComponent<CardView>();
             cardView.InitializeView(input[i]);
             cardView.SetShowCard(true);
