@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.Events;
 
 [System.Serializable]
@@ -9,6 +11,9 @@ public class PlayerEntity
     [SerializeField] private string name;
     [SerializeField] private bool isMine = false;
     [SerializeField] private RectTransform container;
+    [SerializeField] private AvatarData selectedData;
+    [SerializeField] private Image imgAvatar = null;
+    [SerializeField] private TMP_Text txtCards = null;
     [SerializeField] private List<CardData> cards;
 
     public event System.Action<PlayerEntity, CardData, RectTransform> OnAddedPlayerCard;
@@ -43,6 +48,7 @@ public class PlayerEntity
         OnAddedPlayerCard += listenerAdd;
         OnRemovedPlayerCard += listenerRemove;
         OnRemovedPlayerCards += listenerRemoveAny;
+        SetAvatarState(AvatarData.State.Idle);
     }
 
     public void Clear(System.Action<PlayerEntity, CardData, RectTransform> listenerAdd,
@@ -53,6 +59,8 @@ public class PlayerEntity
         OnAddedPlayerCard -= listenerAdd;
         OnRemovedPlayerCard -= listenerRemove;
         OnRemovedPlayerCards += listenerRemoveAny;
+        if (txtCards != null)
+            txtCards.text = cards.Count.ToString();
     }
 
     public bool HasCard(CardData.Rank inputRank, CardData.TypeSymbol inputSuit)
@@ -85,6 +93,9 @@ public class PlayerEntity
         cards.Add(card);
         OnAddedPlayerCard?.Invoke(this, card, container);
 
+        if (txtCards != null)
+            txtCards.text = cards.Count.ToString();
+
         return cards.Count;
     }
 
@@ -95,6 +106,8 @@ public class PlayerEntity
 
         bool result = cards.Remove(card);
         OnRemovedPlayerCard?.Invoke(this, card, container);
+        if (txtCards != null)
+            txtCards.text = cards.Count.ToString();
 
         return result;
     }
@@ -113,7 +126,10 @@ public class PlayerEntity
             if (!result)
                 return false;
         }
+
         OnRemovedPlayerCards?.Invoke(this, cards, container);
+        if (txtCards != null)
+            txtCards.text = this.cards.Count.ToString();
 
         return true;
     }
@@ -141,5 +157,24 @@ public class PlayerEntity
     public RectTransform GetContainer()
     {
         return container;
+    }
+
+    public void SetAvatarData(AvatarData input)
+    {
+        selectedData = input;
+        imgAvatar.sprite = selectedData.GetEmoteByState(AvatarData.State.Idle).sprite;
+    }
+
+    public void SetAvatarState(AvatarData.State stateInput)
+    {
+        if (selectedData == null)
+            return;
+
+        imgAvatar.sprite = selectedData.GetEmoteByState(stateInput).sprite;
+    }
+
+    public Sprite GetProfile()
+    {
+        return imgAvatar.sprite;
     }
 }

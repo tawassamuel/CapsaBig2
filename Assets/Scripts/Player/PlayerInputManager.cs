@@ -13,6 +13,8 @@ public class PlayerInputManager : MonoBehaviour
     [SerializeField] private Button btnSelectedSubmit = null;
     [SerializeField] private Button btnPass = null;
 
+    private CapsaRuleData.ComboOutput lastConfirmCombo = null;
+
     public void OnSwitchedPlayer(PlayerEntity currentPlayer)
     {
         if (currentPlayer.IsMine())
@@ -39,6 +41,7 @@ public class PlayerInputManager : MonoBehaviour
 
     public void OnCurrentSelectedCards(List<CardView> selectedCards, CapsaRuleData.ComboOutput combo)
     {
+        lastConfirmCombo = combo;
         btnSelectedSubmit.interactable = combo != null;
         if (combo != null)
             Debug.Log("Available combo is " + combo.name);
@@ -77,7 +80,7 @@ public class PlayerInputManager : MonoBehaviour
                     return;
                 }
 
-                deskController.SubmitSelectedCardByPlayer();
+                deskController.SubmitSelectedCardByPlayer(lastConfirmCombo);
             });
 
             btnPass.onClick.AddListener(() =>

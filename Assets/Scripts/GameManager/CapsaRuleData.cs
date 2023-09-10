@@ -504,6 +504,8 @@ public class CapsaRuleData : ScriptableObject
                     {
                         tryInsert.availableCards.Add(cardB);
                         tryInsert.basedValue += GetWeightByCardData(cardB);
+                        if (tryInsert.availableCards.Count == 5)
+                            break;
                     }
                 }
 

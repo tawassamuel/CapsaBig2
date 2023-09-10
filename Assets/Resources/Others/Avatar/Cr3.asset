@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2bd466bbd1bcdde478334f541741d1b7, type: 3}
-  m_Name: Oggy
+  m_Name: Cr3
   m_EditorClassIdentifier: 
   emotes:
-  - name: Oggy Idle
+  - name: Cr3 Idle
     state: 0
-    sprite: {fileID: 21300000, guid: 6cd20d15f9a070c40a077ef42c393bf4, type: 3}
-  - name: Oggy Sad
+    sprite: {fileID: 21300000, guid: 825e7f98328de0043994400c116fac0d, type: 3}
+  - name: Cr3 Sad
     state: -1
-    sprite: {fileID: 21300000, guid: 801454882f375cb4c9d04339daf5f38a, type: 3}
-  - name: Oggy Happy
+    sprite: {fileID: 21300000, guid: 474fd55fceef9474a963c0edcc98b867, type: 3}
+  - name: Cr3 Happy
     state: 1
-    sprite: {fileID: 21300000, guid: 0b4755a2e3320bd46a2630fe0dfc102f, type: 3}
+    sprite: {fileID: 21300000, guid: 3641c4def57e12944a0f00ffbbb55d3d, type: 3}

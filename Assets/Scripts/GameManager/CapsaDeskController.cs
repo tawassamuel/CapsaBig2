@@ -63,6 +63,7 @@ public class CapsaDeskController : MonoBehaviour
             return prefabCard;
         }
     }
+    [SerializeField] private AvatarMenuSelection avatarMenu = null;
 
     [SerializeField] private RectTransform centerBattle = null;
     [SerializeField] private List<CardData> currentCenterCards = new List<CardData>();
@@ -123,7 +124,7 @@ public class CapsaDeskController : MonoBehaviour
         }
 
         currentAI.PullSomeCard(comboCards);
-        battleManager.PutToTable(currentAI, comboCards, this.Prefab);
+        battleManager.PutToTable(currentAI, comboCards, takeCombo.name, this.Prefab);
 
         yield return new WaitForSeconds(aiController.DelayMove);
 
@@ -138,7 +139,7 @@ public class CapsaDeskController : MonoBehaviour
         if (battleManager.GetLastSender() == currentPlayer)
         {
             Debug.Log("Winner battle is " + currentPlayer.GetName());
-            battleManager.ClearAll();
+            battleManager.ClearAll(currentPlayer.GetName());
         }
 
         if (!currentPlayer.IsMine())
@@ -160,7 +161,7 @@ public class CapsaDeskController : MonoBehaviour
         OnAllSelectedCardByPlayer?.Invoke(selectedPlayerCards, rulesData.GetAvailableCombo(turnManager.NumOfTurn(), ConvertToCardDataByView(selectedPlayerCards)));
     }
 
-    public void SubmitSelectedCardByPlayer()
+    public void SubmitSelectedCardByPlayer(CapsaRuleData.ComboOutput comboConfirm)
     {
         PlayerEntity myEntity = players.Where(x => x.IsMine() == true).FirstOrDefault();
         if (myEntity == null)
@@ -177,7 +178,7 @@ public class CapsaDeskController : MonoBehaviour
         }
 
         myEntity.PullSomeCard(cardDatums);
-        battleManager.PutToTable(myEntity, cardDatums, this.Prefab);
+        battleManager.PutToTable(myEntity, cardDatums, comboConfirm.name, this.Prefab);
 
         ResetSelectedCardByPlayer();
         turnManager.GoNextTurn(players);
@@ -263,10 +264,36 @@ public class CapsaDeskController : MonoBehaviour
             }
         }
 
+        List<PlayerEntity> others = new List<PlayerEntity>(players.Where(x => x != entity).ToList());
+
         if (entity.GetAvailableCards().Count <= 0)
         {
             Winner = entity;
+            entity.SetAvatarState(AvatarData.State.Happy);
             InvokePhase(PhaseDesk.Finish);
+
+            foreach (PlayerEntity other in others)
+            {
+                other.SetAvatarState(AvatarData.State.Sad);
+            }
+        } else
+        {
+            int myCardNum = entity.GetAvailableCards().Count;
+            
+            others = others.OrderBy(x => x.GetAvailableCards().Count).ToList();
+            foreach (PlayerEntity other in others)
+            {
+                int otherCardNum = other.GetAvailableCards().Count;
+                if (otherCardNum <= 5 && Mathf.Abs(myCardNum - otherCardNum) >= 6)
+                    entity.SetAvatarState(AvatarData.State.Sad);
+                else if (otherCardNum > 5 && Mathf.Abs(myCardNum - otherCardNum) >= 6)
+                {
+                    entity.SetAvatarState(AvatarData.State.Happy);
+                    other.SetAvatarState(AvatarData.State.Sad);
+                }
+                else
+                    entity.SetAvatarState(AvatarData.State.Idle);
+            }
         }
     }
 
@@ -387,6 +414,34 @@ public class CapsaDeskController : MonoBehaviour
             }
         });
 #endif
+    }
+    
+    private void OnSelectedAvatarByPlayer(AvatarData dataAvatar)
+    {
+        PlayerEntity getMine = players.Where(x => x.IsMine() == true).FirstOrDefault();
+        if (getMine == null)
+            return;
+
+        getMine.SetAvatarData(dataAvatar);
+
+        List<AvatarData> otherData = new List<AvatarData>();
+        otherData.AddRange(Resources.LoadAll<AvatarData>("Others/Avatar").ToList());
+        otherData = otherData.Where(x => x != dataAvatar).ToList();
+        List<PlayerEntity> getOthers = players.Where(x => x.IsMine() == false).ToList();
+
+        int index = 0;
+        foreach (PlayerEntity entity in getOthers)
+        {
+            if (entity == null)
+                continue;
+
+            entity.SetAvatarData(otherData[index]);
+            index++;
+            if (index >= otherData.Count)
+                index = 0;
+        }
+
+        StartGame();
     }
     #endregion
 
@@ -512,6 +567,12 @@ public class CapsaDeskController : MonoBehaviour
         if (turnManager != null)
         {
             turnManager.OnCatchPlayerToPlay += OnSwitchedPlayer;
+        }
+
+        if (avatarMenu == null)
+        {
+            avatarMenu = AvatarMenuSelection.Singleton;
+            avatarMenu.OnSelectedAvatarByPlayer += OnSelectedAvatarByPlayer;
         }
 
         if (autoStart)
