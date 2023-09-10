@@ -71,7 +71,7 @@ public class CapsaBattleManager : MonoBehaviour
         currentTable.Clear();
     }
 
-    public void PutToTable(PlayerEntity senderEntity, List<CardData> input, string nameCombo, GameObject prefab)
+    public void PutToTable(PlayerEntity senderEntity, List<CardData> input, string nameCombo)
     {
         if (currentTable == null)
             currentTable = new List<CardView>();
