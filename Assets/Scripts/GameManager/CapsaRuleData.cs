@@ -431,7 +431,11 @@ public class CapsaRuleData : ScriptableObject
             for (int j = 1; j < 4; j++)
             {
                 if (GetRankByRule(analyze[i + j]) == (GetRankByRule(analyze[i + j - 1]) + 1))
+                {
                     straight.Add(analyze[i + j]);
+                    if (straight.Count >= 5)
+                        break;
+                }
                 else
                     break;
             }
@@ -476,6 +480,8 @@ public class CapsaRuleData : ScriptableObject
                     cardA.GetSuit() == cardB.GetSuit())
                 {
                     flush.Add(cardB);
+                    if (flush.Count >= 5)
+                        break;
                 }
             }
 
